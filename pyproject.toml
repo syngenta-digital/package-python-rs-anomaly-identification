@@ -1,0 +1,22 @@
+[tool.poetry]
+name = "cad-remote-sensing-anomaly-detection"
+version = "0.1.0"
+description = "a tool to highlight anomalies in the field during growing season and thier propabilities"
+authors = ["ghazwan namou jablak <ghazwan.namou_jablak@syngenta.com>"]
+readme = "README.md"
+packages = [{include = "cad_remote_sensing_anomaly_detection"}]
+
+[tool.poetry.dependencies]
+python = "^3.10"
+numpy = "^1.26.2"
+numba = "^0.58.1"
+scikit-image = "^0.22.0"
+xarray = "^2023.11.0"
+netcdf4 = "^1.6.5"
+h5netcdf = "^1.3.0"
+dask = "^2023.12.0"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
