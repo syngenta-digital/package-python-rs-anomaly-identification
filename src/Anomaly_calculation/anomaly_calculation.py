@@ -3,7 +3,23 @@ import numpy as np
 import pandas as pd
 
 class ExtremeAnoMap:
-    def __init__(self, file,doy, NDVI):
+    """
+    A class to show anomalous area in the field, the calculation is carried out at pixel level.
+    each pixel is assigned two values (propability of being anomalous and the NDVI difference). 
+    Propabilities and NDVI difference are obtained by comparing NDVI value of a pixel to the NDVI value of the refrence
+    of the same pixel.
+    
+    Parameters:
+    
+    doy: Day of year (of the NDVI image).
+    NDVI: NDVI array of all images.
+
+    Returns:
+
+    RFD: Propability maps.
+    delta: NDVI difference maps.
+    """
+    def __init__(self, file,doy:np.array, NDVI:np.array)-> None:
         self.file=file
         self.doy=doy
         self.NDVI=NDVI
