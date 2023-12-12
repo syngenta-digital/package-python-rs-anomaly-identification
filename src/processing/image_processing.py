@@ -57,11 +57,10 @@ def valid_images(DS:xr.core.dataset.Dataset,alignment_dict:dict,vi='NDVI', testi
      if start_date is not None and end_date is not None:
         years=set([str(date).split('-')[0] for date in DS['time'].values])
         window_of_extraction=[]
-        for year in years:
-            for date in DS['time'].values:
-                if year in str(date):
-                    if str(date)<str(year)+'-'+str(start_date) or str(date)>str(year)+'-'+str(end_date):
-                        window_of_extraction.append(date)
+        for year, date in itertools.product(years, DS['time'].values):
+            if year in str(date):
+                if str(date)<str(year)+'-'+str(start_date) or str(date)>str(year)+'-'+str(end_date):
+                    window_of_extraction.append(date)
         dates_to_drop=dates_to_drop+window_of_extraction
         DS=DS.drop_sel(time=dates_to_drop)
      else:
