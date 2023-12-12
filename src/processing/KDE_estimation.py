@@ -2,19 +2,15 @@ from numba import njit, typed, prange
 import numpy as np
 
 @njit(fastmath=True)
-def _normal_reference(data):
+def _normal_reference(data:np.array) -> np.array:
         """
-        Returns Scott's normal reference rule of thumb bandwidth parameter.
+        A function that returns Scott's normal reference rule of thumb bandwidth parameter.
 
-        Notes
-        -----
-        See p.13 in [2] for an example and discussion.  The formula for the
-        bandwidth is
+        Parameters:
+        data: np.array that contains NDVI values and their corresponding day of year.
 
-        .. math:: h = 1.06n^{-1/(4+q)}
-
-        where ``n`` is the number of observations and ``q`` is the number of
-        variables.
+        Returns:
+        Array with 2 bandwidth parameters (for NDVI and day of year).
         """
         nobs,_ = np.shape(data)
         X = np.array([np.std(data[:,idx]) for idx in range(np.shape(data)[1])])
@@ -22,11 +18,39 @@ def _normal_reference(data):
 
 @njit(fastmath=True)
 def gaussian_numba(h, Xi, x):
+    """
+    Gaussian Kernel for continuous variables
+    Parameters
+
+    h : 1-D ndarray, shape (K,)
+        The bandwidths used to estimate the value of the kernel function.
+    Xi : 1-D ndarray, shape (K,)
+        The value of the training set.
+    x : 1-D ndarray, shape (K,)
+        The value at which the kernel density is being estimated.
+
+    Returns
+
+    kernel_value : ndarray, shape (nobs, K)
+        The value of the kernel function at each training point for each var.
+    """
     return (1. / np.sqrt(2 * np.pi)) * np.exp(-(Xi - x)**2 / (h**2 * 2.))
 
 
 @njit(fastmath=True)
-def gpke_numba(bw, data, data_predict, var_type):
+def gpke_numba(bw:np.array, data:np.array, data_predict:np.array, var_type:str):
+    """
+    A function to return the non-normalized Generalized Product Kernel Estimator
+
+    Parameters:
+    bw: Bandwidth of parameters (NDVI and day of year).
+    data: the data which will be used to estimate KD
+    data_predict: the data which PDF will be estimated for
+    var_type: string showing number of variables
+
+    Returns:
+    PDF array
+    """
     Kval = np.empty(data.shape)
     for ii, vtype in enumerate(var_type):
         Kval[:, ii] = gaussian_numba(bw[ii], data[:, ii], data_predict[ii])
@@ -36,13 +60,35 @@ def gpke_numba(bw, data, data_predict, var_type):
 
 @njit(fastmath=True)
 def get_pdf_numba(bw, data, var_type,data_predict):
+    """
+    A function to calculate PDF values
+
+    Parameters:
+    bw: Bandwidth of parameters (NDVI and day of year).
+    data: the data which will be used to estimate KD
+    data_predict: the data which PDF will be estimated for
+    var_type: string showing number of variables
+
+    Returns:
+    PDF array
+    """
     nobs,_ = np.shape(data)
     pdf_est = [gpke_numba(bw, data, data_predict[i, :], var_type) / nobs for i in range(np.shape(data_predict)[0])]
-    #pdf_est = np.squeeze(pdf_est)
     return np.array(pdf_est)
 
 @njit(parallel=True)
-def get_finaloutput_numba(doy=np.array([]), ndvi=np.array([[[]]]),ndim=np.array([])):
+def get_finaloutput_numba(doy=np.array([]), ndvi=np.array([[[]]]),ndim=np.array([])) -> np.array:
+    """
+    A function to calculate PDF values for the entire field
+
+    Parameters:
+    doy: day of year.
+    ndvi: ndvi values
+    ndim: dimenstion of the training dataset
+
+    Returns:
+    PDF array for all pixels in the entire field.
+    """
     output=np.zeros((50,365,ndim[1],ndim[2]),np.float32)
     ndvi_range = np.linspace(0, 10000, num=50)
     for y in prange(ndim[1]):
