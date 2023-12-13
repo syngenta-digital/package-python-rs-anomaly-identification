@@ -87,4 +87,4 @@ if __name__ == "__main__":
     downloader = DataDownloader(path)
     downloader.download(range_dates=config.RANGE_DATES, params=config.PARAMS,
                         output_path='../data/raw/nematode_fields/')
-    print("Success!")
+    print("Success!!")
