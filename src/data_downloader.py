@@ -83,8 +83,8 @@ if __name__ == "__main__":
     os.environ['SH_CLIENT_ID'] = CREDENTIALS['SH_CLIENT_ID']
     os.environ['SH_INSTANCE_ID'] = CREDENTIALS['SH_INSTANCE_ID']
 
-    path = config.FEATURE_COLLECTION_FILE
-    downloader = DataDownloader(path)
+    filename = config.FEATURE_COLLECTION_FILE
+    downloader = DataDownloader(filename)
     downloader.download(range_dates=config.RANGE_DATES, params=config.PARAMS,
                         output_path='../data/raw/nematode_fields/')
     print("Success!!")
