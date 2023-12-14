@@ -24,7 +24,6 @@ class DataDownloader:
         :return:
 
         """
-        print(type(self.feature_collection))
         return self.feature_collection
 
     def get_polygon(self, index: int) -> shapely.geometry.multipolygon.MultiPolygon:
