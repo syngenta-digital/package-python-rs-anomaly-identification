@@ -18,12 +18,13 @@ class DataDownloader:
         with open(pathname) as f:
             self.feature_collection = geojson.load(f)
 
-    def get_feature_collection(self) -> None:
+    def get_feature_collection(self) -> geojson.feature.FeatureCollection:
         """
         Returns the feature collection loaded.
         :return:
 
         """
+        print(type(self.feature_collection))
         return self.feature_collection
 
     def get_polygon(self, index: int) -> shapely.geometry.multipolygon.MultiPolygon:
