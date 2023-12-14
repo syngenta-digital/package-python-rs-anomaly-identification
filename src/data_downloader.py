@@ -9,18 +9,18 @@ from credentials import CREDENTIALS
 
 
 class DataDownloader:
-    def __init__(self, filename: str) -> None:
+    def __init__(self, pathname: str) -> None:
         """
-        Contructor of the class: it loads the feature collection file indicated in "filename".
-        :param filename: (str) name of the feature collection file.
+        Constructor of the class: it loads the feature collection file indicated in "filename".
+        :param pathname: (str) Pathname of the feature collection file.
 
         """
-        with open(filename) as f:
+        with open(pathname) as f:
             self.feature_collection = geojson.load(f)
 
     def get_feature_collection(self) -> None:
         """
-        Returns feature collection loaded.
+        Returns the feature collection loaded.
         :return:
 
         """
@@ -28,7 +28,7 @@ class DataDownloader:
 
     def get_polygon(self, index: int) -> shapely.geometry.multipolygon.MultiPolygon:
         """
-        Returns geometry of the i-th polygon in the feature collection.
+        Returns the geometry of the i-th polygon in the feature collection.
         :param index: (int) Index of the i-th polygon in the feature collection.
         :return: (MultiPolygon) Shapely geometry.
         """
@@ -37,11 +37,12 @@ class DataDownloader:
                 'coordinates': [self.feature_collection['features'][index]['geometry']['coordinates']]}
         return shape(poly)
 
-    def get_downloaded_fields_list(self, path: str) -> list[str]:
+    @staticmethod
+    def get_downloaded_fields_list(path: str) -> list[str]:
         """
         Returns a list of indexes of files already downloaded in the folder indicated by "path".
         :param path: (str) Path of the folder containing downloaded files.
-        :return: (list[int]) list of indexes of files already downloaded.
+        :return: (list[int]) List of indexes of files already downloaded.
 
         """
         already_downloaded_fields = glob.glob(f"{path}*.nc")
@@ -51,11 +52,11 @@ class DataDownloader:
 
     def download(self, range_dates: list[str], params: dict, output_path: str, force=False) -> None:
         """
-        Download data in the specified range of dates
-        :param range_dates: (list[str]) List containing start and end dates for downloading
-        :param params: (dict) Dictionary with parameters used for download (cloud percentage, satellite name, etc.).
+        Download data in the specified range of dates.
+        :param range_dates: (list[str]) List containing start and end dates for downloading.
+        :param params: (dict) Dictionary with parameters used for download (cloud percentage, satellite name, etc).
         :param output_path: (str) Output folder where downloaded files will be saved to.
-        :param force: (Bool) Flag to force or prevent redownload.
+        :param force: (Bool) Flag to force or prevent re-download.
         :return:
 
         """
@@ -87,4 +88,4 @@ if __name__ == "__main__":
     downloader = DataDownloader(filename)
     downloader.download(range_dates=config.RANGE_DATES, params=config.PARAMS,
                         output_path='../data/raw/nematode_fields/')
-    print("Success!!")
+    print("Success!")
