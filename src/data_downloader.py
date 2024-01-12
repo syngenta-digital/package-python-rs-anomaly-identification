@@ -1,11 +1,8 @@
-import os
 import glob
 import geojson
 import shapely
 from shapely.geometry import shape
 from cads.tools import SenHub, tools, params, VegIndices
-import config as config
-from credentials import CREDENTIALS
 
 
 class DataDownloader:
@@ -55,7 +52,8 @@ class DataDownloader:
         Download data in the specified range of dates.
         :param range_dates: (list[str]) List containing start and end dates for downloading.
         :param params: (dict) Dictionary with parameters used for download (cloud percentage, satellite name, etc).
-        :param output_path: (str) Output folder where downloaded files will be saved to.
+        :param output_path: (str) Output folder where downloaded files will be saved to. Currentl, files are saved
+        only with NETCDF4 format.
         :param force: (Bool) Flag to force or prevent re-download.
         :return:
 
@@ -78,14 +76,3 @@ class DataDownloader:
                                  clp_threshold=params['CLP_THRESHOLD'])
                 satimgs.request()
 
-
-if __name__ == "__main__":
-    os.environ['SH_CLIENT_SECRET'] = CREDENTIALS['SH_CLIENT_SECRET']
-    os.environ['SH_CLIENT_ID'] = CREDENTIALS['SH_CLIENT_ID']
-    os.environ['SH_INSTANCE_ID'] = CREDENTIALS['SH_INSTANCE_ID']
-
-    filename = config.FEATURE_COLLECTION_FILE
-    downloader = DataDownloader(filename)
-    downloader.download(range_dates=config.RANGE_DATES, params=config.PARAMS,
-                        output_path='../data/raw/nematode_fields/')
-    print("Success!")

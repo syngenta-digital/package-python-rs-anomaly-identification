@@ -1,11 +1,7 @@
-FEATURE_COLLECTION_FILE = "../data/raw/AD_US_131_fields.geojson"
-NETCDF4_INPUT_FOLDER = "../data/raw/nematode_fields/"
-
-
-RANGE_DATES = ['2018-01-01', '2023-12-31']
-PARAMS = {'SAT': 'S2',
-          'CLOUD_FRAC_TILE_MAX': 0.8,
-          'CLOUD_FRAC_FIELD_MAX': 0.05,
-          'CLP_THRESHOLD': 0.1}
-
+MODELS_PARAMS = {'MODELS_PATH': "../models",
+                 'TEST_1REG_CP_ALPHA': 0.1,
+                 'TEST_PRECLF_FILE': "pre_classifier.joblib",
+                 'TEST_3REG_FILES_LOW': "pd_regressor_5.1_low.joblib",
+                 'TEST_3REG_FILES_MID': "pd_regressor_5.1_mid.joblib",
+                 'TEST_3REG_FILES_HIGH': "pd_regressor_5.1_high.joblib"}
 DAYS_INTERP = 365
