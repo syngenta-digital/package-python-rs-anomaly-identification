@@ -4,7 +4,7 @@ import pandas as pd
 import joblib
 from datetime import datetime, timedelta
 
-# Class specfic imports
+# Class specific imports
 from src.config import DAYS_INTERP, MODELS_PARAMS
 from src.timeseries_builder import TimeSeriesBuilder
 import planting_date as planting_date
@@ -28,7 +28,7 @@ class NormalizationBuilder:
     def create_planting_date_dataframe(self, ndvi: list[float], dates: list[str], lon_lat: tuple[float, float]) \
             -> pd.DataFrame:
         """
-        Creates the dataframe used as input to the planting_date package
+        Creates the dataframe used as input to the planting_date package.
 
         :param ndvi: list[float] time series of all season chronologically sorted.
         :param dates: list[str] list of all correspondent dates of time series values, also chronologically sorted.
@@ -46,7 +46,6 @@ class NormalizationBuilder:
 
         cropzones_interp, dates_interp, ndvi_interp, lon_interp, lat_interp, doys_interp = [], [], [], [], [], []
         seasons = list(season_windows.keys())
-        interp_params = {'window_length': 50, 'polyorder': 3}
         for season in seasons:
             start = season_windows[season][0]
             end = season_windows[season][1]
@@ -54,7 +53,9 @@ class NormalizationBuilder:
             dates_interp += [self.get_date_from_doy(doy=i, year=int(season)) for i in range(1, DAYS_INTERP + 1)]
             ndvi_interp += TimeSeriesBuilder.compute_sg_time_series_interp(time_series=ndvi[start:end],
                                                                            doys=doys[start:end],
-                                                                           interp_params=interp_params)
+                                                                           interp_params={'window_length': 50,
+                                                                                          'polyorder': 3,
+                                                                                          'days_interp': 365})
             cropzones_interp += [season] * DAYS_INTERP
             lon_interp += [lon_lat[0]] * DAYS_INTERP
             lat_interp += [lon_lat[1]] * DAYS_INTERP
@@ -67,7 +68,7 @@ class NormalizationBuilder:
 
     def normalize_time_series(self, ndvi: list[float], dates: list[str], lon_lat: tuple[float, float]) -> dict:
         """
-        Interface for the planting date package, returning planting dates for each season, as well as computed deltas
+        Interface with the planting date package, returning planting dates for each season, as well as computed deltas
         to align them.
 
         :param ndvi: (list[float]) time series of all season chronologically sorted.
@@ -97,7 +98,7 @@ class NormalizationBuilder:
 
     def estimate_planting_dates(self, planting_date_input_df: pd.DataFrame) -> (pd.DataFrame, pd.DataFrame):
         """
-        Estimates the planting dates using planting_date package.
+        Estimates the planting dates using the planting_date package.
 
         :param planting_date_input_df: (pd.Dataframe) input dataframe.
         :return: (pd.DataFrame, pd.DataFrame): dataframes obtained after preparation and prediction steps.
