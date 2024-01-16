@@ -1,158 +1,79 @@
-import xarray as xr
 import numpy as np
 import pandas as pd
-import itertools
+from datetime import timedelta
 
-def data_split(files:list, test_year='2023') -> [xr.core.dataset.Dataset,tuple]:
-     """
-     A function to split files of field under consideration into training and testing.
+class DataProcessing():
+    def __init__(self, dates, ndvi, alignment_dict,testing_season=None, to_remove=None):
+        self.dates=dates
+        self.ndvi=ndvi
+        self.alignment_dict=alignment_dict
+        self.testing_season=testing_season
+        self.to_remove=to_remove
     
-     Parameters:
-    
-     doy: Day of year (of the NDVI image).
-     NDVI: NDVI array of all images.
-
-     Returns:
-
-     DStr: dataset of vegtitative index (training).
-     DSts: dataset of vegtitative index (testing).
-     spatial_dim: dimenstion of testing dataset
-     """
-     if isinstance(test_year, (float,int)):
-         test_year=str(test_year)
-     training=[file for file in files if test_year not in file.split('/')[-1]]
-     testing=[file for file in files if test_year in file.split('/')[-1]]
-     DStr= xr.open_mfdataset(training)
-     DSts= xr.open_mfdataset(testing)
-     spatial_dim=(DStr['x'].shape[0], DStr['y'].shape[0])
-     return DStr, DSts, spatial_dim
-
-
-def valid_images(DS:xr.core.dataset.Dataset,alignment_dict:dict,vi='NDVI', testing_season=False,start_date=None,end_date=None) -> xarray.core.dataset.Dataset:
-     """
-     A function to remove unwated images.
-    
-     Parameters:
-    
-     DS: dataset of vegtitative index.
-     alignment_dict: dictionary containing available years for the field.
-     testing_season: year which will used as testing
-
-     Returns:
-
-     DS: dataset of vegtitative index.
-     """
-     if vi=='NDVI':
-         DS['NDVI']=(DS['B08']-DS['B04'])/(DS['B08']+DS['B04'])*10000
-     null_count={idx:np.sum(np.isnan(DS[vi].values[idx,:,:]))\
-                /(DS[vi].values.shape[1]*DS[vi].values.shape[2]) for idx in range(len(DS['time'].values))}
-     min_val=min(null_count.values())
-     dates_to_drop=[DS['time'].values[key] for key,val in null_count.items() if val > min_val]
-     if testing_season:
-        dates_to_drop=dates_to_drop
-     else:
-        seasons_to_drop=[date for date in DS['time'].values if 
-                     all(year not in str(date) for year in alignment_dict['deltas'].keys())]
-        dates_to_drop=dates_to_drop+seasons_to_drop
-     if start_date is not None and end_date is not None:
-        years=set([str(date).split('-')[0] for date in DS['time'].values])
-        window_of_extraction=[]
-        for year, date in itertools.product(years, DS['time'].values):
-            if year in str(date):
-                if str(date)<str(year)+'-'+str(start_date) or str(date)>str(year)+'-'+str(end_date):
-                    window_of_extraction.append(date)
-        dates_to_drop=dates_to_drop+window_of_extraction
-        DS=DS.drop_sel(time=dates_to_drop)
-     else:
-        DS=DS.drop_sel(time=dates_to_drop)
-     return DS
-
-def date_data(field_data:xr.core.dataset.Dataset,dictionary:dict) -> [xr.core.dataset.Dataset,np.array,np.array]:
-     """
-     A function calculate shifted (aligned) day of year.
-    
-     Parameters:
-    
-     field_data: dataset of vegtitative index.
-     dictionary: dictionary containing available years for the field with amount needed to shift the every season.
-
-     Returns:
-
-     field_data: dataset of vegtitative index.
-     odoy: Original day of year.
-     ndoy: Aligned day of year.
-     """
-     dates_to_drop=[]
-     ndoy=[]
-     odoy=[]
-     dates=field_data['time'].values
-     for year , date in itertools.product(dictionary['deltas'].keys(),dates):
-        if year in str(date) :
-            new_doy=pd.to_datetime(date).dayofyear - np.round(dictionary['deltas'][year])
-            if new_doy>0:                                                
-                ndoy.append(new_doy)
-                odoy.append(pd.to_datetime(date).dayofyear)
-            else:
-                dates_to_drop.append(date)
+    def data_split(self):
+        training_dates=[]
+        training_ndvi=[]
+        testing_dates=[]
+        testing_ndvi=[]
+        dates=pd.DatetimeIndex(self.dates)
+        years=np.unique(dates.year)
+        if self.to_remove:
+            touse_seasons=[year for year in years if year not in self.to_remove]
         else:
-            continue
-     field_data=field_data.drop_sel(time=dates_to_drop)
-     return field_data, np.array(odoy), np.array(ndoy)
-
-def get_prob(test_data:np.array, prob_arr:np.array) -> np.array:
-    """
-    A function to get pixel propapbilities for every image of the testing season.
+            touse_seasons=years
+        for year in touse_seasons:
+            year_dates=[date for date in dates if str(year) in str(date)]
+            year_index=[i for i,date in enumerate(dates) if str(year) in str(date)]
+            minval=np.min(year_index)
+            maxval=np.max(year_index)
+            seasonal_ndvi=self.ndvi[minval:maxval+1,:,:]
+            if year==self.testing_season:
+                testing_dates.append(year_dates)
+                testing_ndvi.append(seasonal_ndvi)
+            else:
+                training_dates.append(year_dates)
+                training_ndvi.append(seasonal_ndvi)
+        trdates=[v for item in training_dates for v in item]
+        trvi=[v for item in training_ndvi for v in item]
+        tsdates=[v for item in testing_dates for v in item]
+        tsvi=[v for item in testing_ndvi for v in item]
+        return trdates,np.array(trvi),tsdates,np.array(tsvi)
     
-     Parameters:
+    @staticmethod
+    def threshold_calculation(dates,vi):
+        null_count={idx:np.sum(np.isnan(vi[idx,:,:]))\
+                /(vi.shape[1]*vi.shape[2]) for idx in np.arange(vi.shape[0])}
     
-     test_data: NDVI value closest to the testing data from NDVI search space.
-     prop_arr: Propability values
-
-     Returns:
-
-     arr: Propability values for every image in the testing season.
-     """
-    arr=np.zeros(test_data.shape)
-    for x, y in itertools.product(range(test_data.shape[1]), range(test_data.shape[2])):
-        for idx, val in enumerate(test_data[:,x,y]):
-            arr[idx,x,y]=prob_arr[idx,val,x,y]    
-    return arr
-
-def ndvi_index_raster(test_data:xr.core.dataset.Dataset, ndvi_range:np.array) -> list:
-    """
-    A function to get closest NDVI .
+        min_val=min(null_count.values())
+        dates_to_keep=[dates[key] for key,val in null_count.items() if val <= min_val]
+        ndvi_to_keep=[vi[key,:,:] for key,val in null_count.items() if val <= min_val]
+        return np.array(dates_to_keep), np.array(ndvi_to_keep)
     
-     Parameters:
     
-     test_data: dataset of vegtitative index.
-     NDVI_range: 50 NDVI values ranging from 0 - 10000.
-
-     Returns:
-
-     list1: index of the closest NDVI values in the testing data to the NDVI search values.
-     """
-    list1=[]
-    for val in test_data:
-        list2=[np.abs(d-val) for d in ndvi_range]
-        list1.append(list2.index(min(list2)))
-    return list1
-
-
-def unique_cumsum(arr:np.array) -> np.array:
-    """
-    Calculating cumulative sum for all unique values in propability file .
+    def valid_images(self):
+        trdates,trvi,tsdates,tsvi=self.data_split()
+        trdates_fin,trvi_fin=self.threshold_calculation(trdates,trvi)
+        tsdates_fin, tsvi_fin=self.threshold_calculation(tsdates,tsvi)
+        return trdates_fin, trvi_fin, tsdates_fin, tsvi_fin
     
-     Parameters:
     
-     arr: Propability file.
-
-     Returns:
-
-     e: array containing cumulative sum for all values.
-     """
-    arr[np.isnan(arr)]=0
-    b=np.unique(np.sort(arr))[::-1]
-    c=np.cumsum(b)
-    vals_dict={x:y for x,y in zip(b, c)}
-    e=np.array([vals_dict[x] for x in arr])
-    return e
+    def date_alignment(self):
+        old_dates_list=[]
+        new_dates_list=[]
+        vi_list=[]
+        years=list(self.alignment_dict['deltas'].keys())
+        dates,vi,_,_=self.valid_images()
+        for year in years:
+            year_index={i :date for i,date in enumerate(dates) if str(year) in str(date)}
+            original_dates={k:v for k,v in year_index.items() \
+                          if pd.to_datetime(v).dayofyear - np.round(self.alignment_dict['deltas'][year])>0}
+            aligned_dates={k:(pd.to_datetime(v) - timedelta(np.round(self.alignment_dict['deltas'][year]))).to_numpy()\
+                     for k,v in year_index.items() if pd.to_datetime(v).dayofyear - np.round(self.alignment_dict['deltas'][year])>0}
+            old_dates_list.append(original_dates.values())
+            new_dates_list.append(aligned_dates.values())
+            vi_list.append([vi[idx,:,:] for idx in aligned_dates.keys()])
+        
+        old_dates=[i for item in old_dates_list for i in item]
+        new_dates=[i for item in new_dates_list for i in item]
+        vi_final=[i for item in vi_list for i in item]
+        return np.array(old_dates), np.array(new_dates),np.array(vi_final)
