@@ -15,7 +15,7 @@ class NormalizationBuilder:
         """
         Constructor of the class: it loads the pretrained models used by planting_date class.
 
-        :param models_config: dictionary with initalization parameters.
+        :param models_config: dictionary with initialization parameters.
         """
         if models_config is None:
             models_config = MODELS_PARAMS
@@ -32,7 +32,7 @@ class NormalizationBuilder:
 
         :param ndvi: list[float] time series of all season chronologically sorted.
         :param dates: list[str] list of all correspondent dates of time series values, also chronologically sorted.
-        The only accepted format is "YYY-mm-dd"
+        The only accepted format is "YYY-mm-dd".
         :param lon_lat: (tuple[float, float]) a tuple of lon, lat belonging to the field under analysis.
         :return: (pd.DataFrame) A pandas dataframe to be used with planting_date package
         """
