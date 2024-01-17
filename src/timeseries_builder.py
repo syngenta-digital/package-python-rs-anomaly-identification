@@ -9,11 +9,12 @@ class TimeSeriesBuilder:
         """
         Creates an interpolated time series using linear interpolation and Savitzky-Golay filter.
 
-        :param time_series: (list[float]) not interpolated input time series.
+        :param time_series: (list[float]) non interpolated input time series.
         :param doys: (list[int]) input days of the year.
         :param interp_params: (dict) dictionary with interpolation parameters such as window_length and polyorder.
-        :return: (list[float] interpolated output time series)
+        :return: (list[float]) interpolated output time series.
         """
+
         nan_indexes = [time_series.index(x) for x in time_series if np.isnan(x)]
 
         time_series_clean = [time_series[i] for i in range(0, len(time_series)) if i not in nan_indexes]
