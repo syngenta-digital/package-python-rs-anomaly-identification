@@ -1,4 +1,4 @@
-from src.processing.image_processing import get_prob, ndvi_index_raster, unique_cumsum
+from src.functions.statistical_functions import get_prob, ndvi_index_raster, unique_cumsum
 import numpy as np
 import pandas as pd
 
@@ -11,20 +11,21 @@ class ExtremeAnoMap:
     
     Parameters:
     
-    doy: Day of year (of the NDVI image).
-    NDVI: NDVI array of all images.
+    file: Probabilities array (training seasons)
+    doy: Day of year (otesting season).
+    NDVI: NDVI array of all images (testing season).
 
     Returns:
 
-    RFD: Propability maps.
-    delta: NDVI difference maps.
+    RFD: Propability array.
+    delta: NDVI difference array.
     """
-    def __init__(self, file,doy:np.array, NDVI:np.array)-> None:
-        self.file=file
+    def __init__(self, prob:list[float],doy:list[int], NDVI:list[float])-> None:
+        self.file=prob
         self.doy=doy
         self.NDVI=NDVI
 
-    def rfd(self):
+    def rfd(self)->list[float]:
         f=np.apply_along_axis(lambda x: x/np.sum(x), 0, self.file)
         temp1=f.reshape(18250, f.shape[2], f.shape[3])
         temp2=np.apply_along_axis(lambda x: x/np.sum(x), 0, temp1)
@@ -36,7 +37,7 @@ class ExtremeAnoMap:
         rfd=get_prob(temp5, temp4)
         return rfd
 
-    def delta(self):
+    def delta(self)->list[float]:
         f=np.apply_along_axis(lambda x: x/np.sum(x), 0, self.file)
         temp1=np.apply_along_axis(lambda x: np.argmax(x), 0, f)
         ndvi_range=np.linspace(0, 10000, num=50)
